@@ -132,7 +132,7 @@ public class Main extends ApplicationAdapter {
         if (facingLeft) {
             batch.draw(
                 currentFrame,
-                x + width,
+                x,
                 y,
                 width,
                 height
@@ -140,7 +140,7 @@ public class Main extends ApplicationAdapter {
         } else {
             batch.draw(
                 currentFrame,
-                x,
+                x + width,
                 y,
                 -width,
                height

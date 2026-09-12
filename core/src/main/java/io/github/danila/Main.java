@@ -8,10 +8,14 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
+    private static final int WIDTH = 38;
+    private static final int HEIGHT = 28;
+
     private SpriteBatch batch;
     private Texture idleTexture;
     private Texture runTexture;
@@ -19,143 +23,131 @@ public class Main extends ApplicationAdapter {
     private Animation<TextureRegion> idleAnimation;
     private Animation<TextureRegion> runAnimation;
     private TextureRegion jumpFrame;
-    private float animationTime = 0 ;
+    private TiledLevel level;
+    private PlayerCamera playerCamera;
+    private Rectangle playerRectangle;
 
-    //переменные по физике и положению
-    private float x = 100;
-    private float y = 50;
-    private float speed =200;
-    private float verticalSpeed =0;
-    private float gravity =700 ;
-
-// переключатели состояния
-    private boolean onGround = true;
-    private boolean move = false;
-    private boolean facingLeft = false;
-    int height =28;
-
-    int width = 38;
+    private float x;
+    private float y;
+    private float animationTime;
+    private float verticalSpeed;
+    private final float speed = 200f;
+    private final float gravity = 700f;
+    private boolean onGround;
+    private boolean moving;
+    private boolean facingLeft = true;
 
     @Override
     public void create() {
-
         batch = new SpriteBatch();
         idleTexture = new Texture("assets/hero/Idle.png");
         runTexture = new Texture("assets/hero/Run.png");
         jumpTexture = new Texture("assets/hero/Jump.png");
-        idleAnimation = rotater(idleTexture,12);
-        runAnimation = rotater(runTexture,6);
-        jumpFrame = new TextureRegion(jumpTexture);
+        idleAnimation = createAnimation(idleTexture, 12);
+        runAnimation = createAnimation(runTexture, 6);
+        jumpFrame = new TextureRegion(jumpTexture, 0, 0, WIDTH, HEIGHT);
+
+        level = new TiledLevel("tiled/lvl1.tmx");
+        playerCamera = new PlayerCamera(400f, 225f);
+        Vector2 spawn = level.getLevelSpawn();
+        x = spawn.x;
+        y = spawn.y;
+        playerRectangle = new Rectangle(x, y, WIDTH, HEIGHT);
     }
 
-    private Animation<TextureRegion> rotater(Texture texture,int count){
-        TextureRegion[] frames= new TextureRegion[count];
-
-            int frameY=0;
-        for (int i = 0; i < count; i++) {
-            int frameX = i * width;
-
-            frames[i] = new TextureRegion(
-                texture,
-                frameX,
-                frameY,
-                width,
-                height
-            );
+    private Animation<TextureRegion> createAnimation(Texture texture, int frameCount) {
+        TextureRegion[] frames = new TextureRegion[frameCount];
+        for (int i = 0; i < frameCount; i++) {
+            frames[i] = new TextureRegion(texture, i * WIDTH, 0, WIDTH, HEIGHT);
         }
-
-        float frameDuration = 0.1f;
-
-        return new Animation<TextureRegion>(
-            frameDuration,
-            frames
-        );
+        return new Animation<>(0.1f, frames);
     }
 
     @Override
     public void render() {
-        float rawDelta= Gdx.graphics.getDeltaTime();
-        float delta= MathUtils.clamp(rawDelta,0f,1f/60f);
-        move=false;
+        float delta = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0f, 1f / 30f);
+        updatePlayer(delta);
+        playerCamera.follow(x, y, WIDTH, HEIGHT, level.getLevelBounds());
 
+        ScreenUtils.clear(0.4f, 0.7f, 0.9f, 1f);
+        level.render(playerCamera.getCamera());
+        renderPlayer();
+    }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.A)){
-            x=x-speed*delta;
-            move = true;
-            facingLeft=true;
+    private void updatePlayer(float delta) {
+        moving = false;
+        float oldX = x;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            x -= speed * delta;
+            moving = true;
+            facingLeft = true;
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.D)){
-            x=x+speed*delta;
-                move=true;
-                facingLeft=false;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE) &&onGround){
-            verticalSpeed=350;
-            onGround=false;
-
-
-        }
-
-        if (!onGround){
-            y=y+verticalSpeed*delta;
-            verticalSpeed=verticalSpeed-gravity*delta;
-        }
-        if (y<=50){
-            y=50;
-            verticalSpeed=0;
-            onGround=true;
-
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            x += speed * delta;
+            moving = true;
+            facingLeft = false;
         }
 
-
-        TextureRegion currentFrame;
-        animationTime=animationTime+delta;
-
-        if (!onGround){
-            currentFrame=jumpFrame;
-
-        }else if (move){
-            currentFrame=runAnimation.getKeyFrame(animationTime,true);
+        updatePlayerRectangle();
+        if (level.collides(playerRectangle)) {
+            x = oldX;
+            updatePlayerRectangle();
         }
-        else {
-            currentFrame=idleAnimation.getKeyFrame(animationTime,true);
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && onGround) {
+            verticalSpeed = 350f;
+            onGround = false;
         }
-        ScreenUtils.clear(
-            0.4f,
-            0.7f,
-            0.9f,
-            1
-        );
 
-        batch.begin();
+        float oldY = y;
+        verticalSpeed -= gravity * delta;
+        y += verticalSpeed * delta;
+        updatePlayerRectangle();
 
-        if (facingLeft) {
-            batch.draw(
-                currentFrame,
-                x,
-                y,
-                width,
-                height
-            );
+        if (level.collides(playerRectangle)) {
+            y = oldY;
+            if (verticalSpeed < 0f) onGround = true;
+            verticalSpeed = 0f;
+            updatePlayerRectangle();
         } else {
-            batch.draw(
-                currentFrame,
-                x + width,
-                y,
-                -width,
-               height
-            );
+            onGround = false;
         }
 
+        animationTime += delta;
+    }
+
+    private void updatePlayerRectangle() {
+        playerRectangle.set(x, y, WIDTH, HEIGHT);
+    }
+
+    private void renderPlayer() {
+        TextureRegion frame;
+
+        if (!onGround) {
+            frame = jumpFrame;
+        } else if (moving) {
+            frame = runAnimation.getKeyFrame(animationTime, true);
+        } else {
+            frame = idleAnimation.getKeyFrame(animationTime, true);
+        }
+
+        batch.setProjectionMatrix(playerCamera.getCamera().combined);
+        batch.begin();
+        if (facingLeft) {
+            batch.draw(frame, x, y, WIDTH, HEIGHT);
+        } else {
+            batch.draw(frame, x + WIDTH, y, -WIDTH, HEIGHT);
+        }
         batch.end();
     }
 
     @Override
     public void dispose() {
         batch.dispose();
+        level.dispose();
         idleTexture.dispose();
         runTexture.dispose();
         jumpTexture.dispose();
-
     }
 }

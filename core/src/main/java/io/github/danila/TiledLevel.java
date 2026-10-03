@@ -82,9 +82,23 @@ public class TiledLevel {
             return null;
         }
         MapObject exit = objects.getObjects().get("exit");
+        if (!(exit instanceof RectangleMapObject)) {
+            return null;
+        }
         Rectangle exitBound =((RectangleMapObject) exit).getRectangle();
         if (player.overlaps(exitBound)){
-            return exit.getProperties().get("nextLevel",String.class);
+            String nextLevel = exit.getProperties().get("nextLevel", String.class);
+            if (nextLevel == null || nextLevel.trim().isEmpty()) {
+                return null;
+            }
+            String path = nextLevel.trim();
+            if (!path.startsWith("tiled/")) {
+                path = "tiled/" + path;
+            }
+            if (!path.endsWith(".tmx")) {
+                path += ".tmx";
+            }
+            return path;
 
         }
         return null;

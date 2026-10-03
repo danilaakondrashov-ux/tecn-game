@@ -12,11 +12,22 @@
             "scaleInEditor": 1
         },
         "lvl1.tmx": {
-            "scale": 1.0103645833333332,
+            "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
+                "x": 548,
+                "y": 441.5
+            }
+        },
+        "lvl2.tmx": {
+            "expandedObjectLayers": [
+                4
+            ],
+            "scale": 1.0103645833333332,
+            "selectedLayer": 1,
+            "viewCenter": {
                 "x": 480.0247435434817,
-                "y": 441.91968658178257
+                "y": 320.18145265219863
             }
         }
     },

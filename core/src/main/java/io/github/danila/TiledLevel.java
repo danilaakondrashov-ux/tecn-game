@@ -3,6 +3,7 @@ package io.github.danila;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
+import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -76,6 +77,18 @@ public class TiledLevel {
         return bounds;
     }
 
+    public String getNextLevel (Rectangle player) {
+        if (objects==null){
+            return null;
+        }
+        MapObject exit = objects.getObjects().get("exit");
+        Rectangle exitBound =((RectangleMapObject) exit).getRectangle();
+        if (player.overlaps(exitBound)){
+            return exit.getProperties().get("nextLevel",String.class);
+
+        }
+        return null;
+    }
     public void dispose() {
         renderer.dispose();
         map.dispose();

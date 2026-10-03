@@ -15,7 +15,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 public class Main extends ApplicationAdapter {
     private static final int WIDTH = 38;
     private static final int HEIGHT = 28;
-
+    private AudioManegemante audio ;
     private SpriteBatch batch;
     private Texture idleTexture;
     private Texture runTexture;
@@ -47,12 +47,16 @@ public class Main extends ApplicationAdapter {
         runAnimation = createAnimation(runTexture, 6);
         jumpFrame = new TextureRegion(jumpTexture, 0, 0, WIDTH, HEIGHT);
 
-        level = new TiledLevel("tiled/lvl1.tmx");
+
         playerCamera = new PlayerCamera(400f, 225f);
-        Vector2 spawn = level.getLevelSpawn();
-        x = spawn.x;
-        y = spawn.y;
+
+
         playerRectangle = new Rectangle(x, y, WIDTH, HEIGHT);
+        loadLevel("tiled/lvl1.tmx");
+        audio=new AudioManegemante();
+        audio.setVolume(0.5f);
+        audio.playMusic();
+
     }
 
     private Animation<TextureRegion> createAnimation(Texture texture, int frameCount) {
@@ -67,6 +71,11 @@ public class Main extends ApplicationAdapter {
     public void render() {
         float delta = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0f, 1f / 30f);
         updatePlayer(delta);
+        String nextLevelPath = level.getNextLevel(playerRectangle);
+
+        if (nextLevelPath != null && !nextLevelPath.isEmpty()) {
+            loadLevel(nextLevelPath);
+        }
         playerCamera.follow(x, y, WIDTH, HEIGHT, level.getLevelBounds());
 
         ScreenUtils.clear(0.4f, 0.7f, 0.9f, 1f);
@@ -149,5 +158,28 @@ public class Main extends ApplicationAdapter {
         idleTexture.dispose();
         runTexture.dispose();
         jumpTexture.dispose();
+        audio.dispose();
     }
+    private void loadLevel(String path) {
+        TiledLevel nextLevel = new TiledLevel(path);
+        Vector2 spawn = nextLevel.getLevelSpawn();
+
+        if (level != null) {
+            level.dispose();
+        }
+
+        level = nextLevel;
+
+        x = spawn.x;
+        y = spawn.y;
+
+        verticalSpeed = 0f;
+        animationTime = 0f;
+        onGround = false;
+        moving = false;
+        facingLeft = true;
+
+        updatePlayerRectangle();
+    }
+
 }

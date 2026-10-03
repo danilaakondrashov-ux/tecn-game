@@ -1,6 +1,7 @@
 {
     "activeFile": "lvl1.tmx",
     "expandedProjectPaths": [
+        "."
     ],
     "fileStates": {
         "Decorations (32x32).tsx": {
@@ -13,7 +14,7 @@
         },
         "lvl1.tmx": {
             "scale": 1,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
                 "x": 548,
                 "y": 441.5
@@ -36,12 +37,14 @@
     "openFiles": [
         "Terrain (32x32).tsx",
         "Decorations (32x32).tsx",
-        "lvl1.tmx"
+        "lvl1.tmx",
+        "lvl2.tmx"
     ],
     "project": "game.tiled-project",
     "recentFiles": [
         "Terrain (32x32).tsx",
         "Decorations (32x32).tsx",
+        "lvl2.tmx",
         "lvl1.tmx"
     ],
     "tileset.lastUsedFormat": "tsx"

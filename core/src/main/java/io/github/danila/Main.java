@@ -3,6 +3,10 @@ package io.github.danila;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -36,6 +40,17 @@ public class Main extends ApplicationAdapter {
     private boolean onGround;
     private boolean moving;
     private boolean facingLeft = true;
+    private Stage stage;
+    private Skin skin;
+    private Preferences records;
+    private LevelTimer timer;
+    private MainMenu mainMenu;
+    private SettingsWindow settingsWindow;
+    private boolean playing;
+    private boolean paused;
+    private String currentLevelPath;
+    private String suggestedLevelPath = "tiled/lvl1.tmx";
+    private static final String[] LEVELS = {"tiled/lvl1.tmx", "tiled/lvl2.tmx"};
 
     @Override
     public void create() {
@@ -52,9 +67,15 @@ public class Main extends ApplicationAdapter {
 
 
         playerRectangle = new Rectangle(x, y, WIDTH, HEIGHT);
-        loadLevel("tiled/lvl1.tmx");
-        audio=new AudioManegemante();
-        audio.setVolume(0.5f);
+        records = Gdx.app.getPreferences("pigkingame-records");
+        stage = new Stage(new ScreenViewport());
+        skin = new GameSkin();
+        timer = new LevelTimer(skin);
+        audio = new AudioManegemante();
+        settingsWindow = new SettingsWindow(skin, audio, () -> showMenu(null));
+        mainMenu = new MainMenu(stage, skin, records, LEVELS, this::startLevel, () -> showMenu(null));
+        Gdx.input.setInputProcessor(stage);
+        showMenu(null);
         audio.playMusic();
 
     }
@@ -69,19 +90,66 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
-        float delta = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0f, 1f / 30f);
-        updatePlayer(delta);
-        String nextLevelPath = level.getNextLevel(playerRectangle);
-
-        if (nextLevelPath != null && !nextLevelPath.isEmpty()) {
-            loadLevel(nextLevelPath);
+        float frameDelta = Math.max(0f, Gdx.graphics.getDeltaTime());
+        float delta = MathUtils.clamp(frameDelta, 0f, 1f / 30f);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            if (playing) {
+                if (settingsWindow.isOpen()) settingsWindow.close();
+                else settingsWindow.show(stage);
+            } else showMenu(null);
         }
-        playerCamera.follow(x, y, WIDTH, HEIGHT, level.getLevelBounds());
+        if (playing && !paused && !settingsWindow.isOpen()) {
+            timer.update(frameDelta);
+            updatePlayer(delta);
+            String nextLevelPath = level.getNextLevel(playerRectangle);
 
-        ScreenUtils.clear(0.4f, 0.7f, 0.9f, 1f);
-        level.render(playerCamera.getCamera());
-        renderPlayer();
+            if (nextLevelPath != null && !nextLevelPath.isEmpty()) {
+                boolean best = !records.contains(currentLevelPath)
+                    || timer.getElapsed() < records.getFloat(currentLevelPath);
+                if (best) {
+                    records.putFloat(currentLevelPath, (float) timer.getElapsed());
+                    records.flush();
+                }
+                suggestedLevelPath = nextLevelPath;
+                showMenu(MainMenu.levelName(currentLevelPath) + " — " + LevelTimer.formatTime(timer.getElapsed())
+                    + (best ? "   Новый рекорд!" : ""));
+            }
+        }
+        ScreenUtils.clear(0.08f, 0.12f, 0.18f, 1f);
+        stage.getViewport().apply();
+        if (playing) {
+            playerCamera.follow(x, y, WIDTH, HEIGHT, level.getLevelBounds());
+
+            ScreenUtils.clear(0.23f, 0.21f, 0.3f, 1f);
+            level.render(playerCamera.getCamera());
+            renderPlayer();
+        }
+        stage.act(Math.min(frameDelta, 0.1f));
+        stage.draw();
     }
+
+    private void showMenu(String completion) {
+        if (settingsWindow.isOpen()) settingsWindow.close();
+        playing = false;
+        mainMenu.show(completion, suggestedLevelPath, currentLevelPath);
+    }
+
+    private void startLevel(String path) {
+        loadLevel(path);
+        currentLevelPath = path;
+        timer.reset();
+        playing = true;
+        mainMenu.showHud(timer, () -> settingsWindow.show(stage));
+    }
+
+    @Override public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+        playerCamera.resize(width, height);
+        settingsWindow.centerOnStage();
+    }
+
+    @Override public void pause() { paused = true; }
+    @Override public void resume() { paused = false; }
 
     private void updatePlayer(float delta) {
         moving = false;
@@ -153,8 +221,11 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void dispose() {
+        audio.saveSettings();
         batch.dispose();
-        level.dispose();
+        if (level != null) level.dispose();
+        stage.dispose();
+        skin.dispose();
         idleTexture.dispose();
         runTexture.dispose();
         jumpTexture.dispose();

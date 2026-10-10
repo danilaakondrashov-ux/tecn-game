@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Rectangle;
 public class PlayerCamera {
     private final OrthographicCamera camera;
     private final float viewportWidth;
-    private final float viewportHeight;
+    private float viewportHeight;
 
     public PlayerCamera(float viewportWidth, float viewportHeight) {
         this.viewportWidth = viewportWidth;
@@ -34,5 +34,11 @@ public class PlayerCamera {
 
     public OrthographicCamera getCamera() {
         return camera;
+    }
+
+    public void resize(int width, int height) {
+        viewportHeight = viewportWidth * height / Math.max(1f, width);
+        camera.viewportHeight = viewportHeight;
+        camera.update();
     }
 }

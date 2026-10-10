@@ -1,5 +1,5 @@
 {
-    "activeFile": "lvl1.tmx",
+    "activeFile": "lvl2.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -44,8 +44,8 @@
     "recentFiles": [
         "Terrain (32x32).tsx",
         "Decorations (32x32).tsx",
-        "lvl2.tmx",
-        "lvl1.tmx"
+        "lvl1.tmx",
+        "lvl2.tmx"
     ],
     "tileset.lastUsedFormat": "tsx"
 }

@@ -67,7 +67,7 @@ public class Main extends ApplicationAdapter {
 
 
         playerRectangle = new Rectangle(x, y, WIDTH, HEIGHT);
-        records = Gdx.app.getPreferences("pigkingame-records");
+        records = Gdx.app.getPreferences("danilagame-records");
         stage = new Stage(new ScreenViewport());
         skin = new GameSkin();
         timer = new LevelTimer(skin);
@@ -91,30 +91,9 @@ public class Main extends ApplicationAdapter {
     @Override
     public void render() {
         float frameDelta = Math.max(0f, Gdx.graphics.getDeltaTime());
-        float delta = MathUtils.clamp(frameDelta, 0f, 1f / 30f);
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (playing) {
-                if (settingsWindow.isOpen()) settingsWindow.close();
-                else settingsWindow.show(stage);
-            } else showMenu(null);
-        }
-        if (playing && !paused && !settingsWindow.isOpen()) {
-            timer.update(frameDelta);
-            updatePlayer(delta);
-            String nextLevelPath = level.getNextLevel(playerRectangle);
+        handleEscape();
+        updateGame(frameDelta);
 
-            if (nextLevelPath != null && !nextLevelPath.isEmpty()) {
-                boolean best = !records.contains(currentLevelPath)
-                    || timer.getElapsed() < records.getFloat(currentLevelPath);
-                if (best) {
-                    records.putFloat(currentLevelPath, (float) timer.getElapsed());
-                    records.flush();
-                }
-                suggestedLevelPath = nextLevelPath;
-                showMenu(MainMenu.levelName(currentLevelPath) + " — " + LevelTimer.formatTime(timer.getElapsed())
-                    + (best ? "   Новый рекорд!" : ""));
-            }
-        }
         ScreenUtils.clear(0.08f, 0.12f, 0.18f, 1f);
         stage.getViewport().apply();
         if (playing) {
@@ -126,6 +105,52 @@ public class Main extends ApplicationAdapter {
         }
         stage.act(Math.min(frameDelta, 0.1f));
         stage.draw();
+    }
+
+    private void handleEscape() {
+        if (!Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) return;
+
+        if (!playing) {
+            showMenu(null);
+            return;
+        }
+
+        if (settingsWindow.isOpen()) {
+            settingsWindow.close();
+        } else {
+            settingsWindow.show(stage);
+        }
+    }
+
+    private void updateGame(float frameDelta) {
+        if (!playing || paused || settingsWindow.isOpen()) return;
+
+        timer.update(frameDelta);
+        float delta = MathUtils.clamp(frameDelta, 0f, 1f / 30f);
+        updatePlayer(delta);
+
+        String nextLevelPath = level.getNextLevel(playerRectangle);
+        if (nextLevelPath == null || nextLevelPath.isEmpty()) return;
+
+        finishLevel(nextLevelPath);
+    }
+
+    private void finishLevel(String nextLevelPath) {
+        double time = timer.getElapsed();
+        boolean newRecord = !records.contains(currentLevelPath);
+        if (time < records.getFloat(currentLevelPath)) {
+            newRecord = true;
+        }
+
+        String result = MainMenu.levelName(currentLevelPath) + " — " + LevelTimer.formatTime(time);
+        if (newRecord) {
+            records.putFloat(currentLevelPath, (float) time);
+            records.flush();
+            result += "   Новый рекорд!";
+        }
+
+        suggestedLevelPath = nextLevelPath;
+        showMenu(result);
     }
 
     private void showMenu(String completion) {

@@ -1,13 +1,12 @@
 package io.github.danila;
 
 import com.badlogic.gdx.Preferences;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import java.util.function.Consumer;
 import com.badlogic.gdx.utils.Align;
 
@@ -31,14 +30,12 @@ public class MainMenu {
 
     public void show(String completion, String nextLevelPath, String completedLevelPath) {
         Table table = newPage("Главное меню");
-        if (completion != null) table.add(new Label(completion, skin)).padBottom(20).row();
-        if (completion != null && completedLevelPath != null) {
+        if (completion == null) {
+            addButton(table, "Начать играть", () -> startLevel.accept(levels[0]));
+        } else {
+            table.add(new Label(completion, skin)).padBottom(20).row();
             addButton(table, "Повторить: " + levelName(completedLevelPath),
                 () -> startLevel.accept(completedLevelPath));
-        } else {
-            addButton(table, "Начать играть", () -> startLevel.accept(levels[0]));
-        }
-        if (completion != null && nextLevelPath != null) {
             addButton(table, "Следующий: " + levelName(nextLevelPath),
                 () -> startLevel.accept(nextLevelPath));
         }
@@ -48,9 +45,15 @@ public class MainMenu {
     public void showRecords() {
         Table table = newPage("Рекорды — лучшее время");
         for (String path : levels) {
-            String time = records.contains(path)
-                ? LevelTimer.formatTime(records.getFloat(path)) : "не пройден";
-            table.add(new Label(levelName(path) + " — " + time, skin)).padBottom(18).row();
+            String time = "не пройден";
+            if (records.contains(path)) {
+                float bestTime = records.getFloat(path);
+                time = LevelTimer.formatTime(bestTime);
+            }
+
+            String text = levelName(path) + " — " + time;
+            Label recordLabel = new Label(text, skin);
+            table.add(recordLabel).padBottom(18).row();
         }
         addButton(table, "Главное меню", returnToMenu);
     }
@@ -80,10 +83,11 @@ public class MainMenu {
     private TextButton button(String text, Runnable action) {
         TextButton button = new TextButton(text, skin);
         button.getLabel().setAlignment(Align.center);
-        button.addListener(new ChangeListener() {
-            @Override public void changed(ChangeEvent event, Actor actor) {
+        button.addListener(event -> {
+            if (event instanceof ChangeEvent) {
                 action.run();
             }
+            return false;
         });
         return button;
     }
@@ -93,7 +97,6 @@ public class MainMenu {
     }
 
     public static String levelName(String path) {
-        String name = path.substring(path.lastIndexOf('/') + 1).replace(".tmx", "");
-        return "Уровень " + name.replaceFirst("^lvl", "");
+        return path.replace("tiled/lvl", "Уровень ").replace(".tmx", "");
     }
 }

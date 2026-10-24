@@ -38,6 +38,7 @@ public class MainMenu {
         });
         return button;
 
+
     }
     private void addButton(Table table,String text,Runnable action){
        table.add(button(text,action)).width(300).height(50).padBottom(10).row();

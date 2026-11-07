@@ -27,7 +27,7 @@ public class LevelTimer extends Label {
     }
 
     private void refresh() {
-        setText("Время: " + formatTime(elapsed));
+        setText("Time: " + formatTime(elapsed));
     }
 
     public static String formatTime(double seconds) {

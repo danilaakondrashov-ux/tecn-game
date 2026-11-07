@@ -3,6 +3,7 @@ package io.github.danila;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -10,7 +11,11 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public class Main extends ApplicationAdapter {
     private static final int WIDTH = 38;
@@ -27,6 +32,7 @@ public class Main extends ApplicationAdapter {
     private PlayerCamera playerCamera;
     private Rectangle playerRectangle;
 
+
     private float x;
     private float y;
     private float animationTime;
@@ -36,6 +42,11 @@ public class Main extends ApplicationAdapter {
     private boolean onGround;
     private boolean moving;
     private boolean facingLeft = true;
+    private Stage stage ;
+    private Skin skin ;
+    private LevelTimer timer ;
+    private Preferences records ;
+    private String currentLevelPath ;
 
     @Override
     public void create() {
@@ -46,7 +57,16 @@ public class Main extends ApplicationAdapter {
         idleAnimation = createAnimation(idleTexture, 12);
         runAnimation = createAnimation(runTexture, 6);
         jumpFrame = new TextureRegion(jumpTexture, 0, 0, WIDTH, HEIGHT);
+        stage = new Stage(new ScreenViewport());
+        skin = new GameSkin();
+     timer=new LevelTimer(skin);
+     records=Gdx.app.getPreferences("my_game_records");
 
+        Table hud=new Table();
+        hud.setFillParent(true);
+        hud.top().left().pad(20);
+        hud.add(timer);
+        stage.addActor(hud);
 
         playerCamera = new PlayerCamera(400f, 225f);
 
@@ -70,6 +90,7 @@ public class Main extends ApplicationAdapter {
     @Override
     public void render() {
         float delta = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0f, 1f / 30f);
+        timer.update(Gdx.graphics.getDeltaTime());
         updatePlayer(delta);
         String nextLevelPath = level.getNextLevel(playerRectangle);
 
@@ -81,8 +102,13 @@ public class Main extends ApplicationAdapter {
         ScreenUtils.clear(0.4f, 0.7f, 0.9f, 1f);
         level.render(playerCamera.getCamera());
         renderPlayer();
+        stage.act(delta);
+        stage.draw();
     }
-
+    @Override
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+    }
     private void updatePlayer(float delta) {
         moving = false;
         float oldX = x;
@@ -159,6 +185,8 @@ public class Main extends ApplicationAdapter {
         runTexture.dispose();
         jumpTexture.dispose();
         audio.dispose();
+        stage.dispose();
+        skin.dispose();
     }
     private void loadLevel(String path) {
         TiledLevel nextLevel = new TiledLevel(path);
@@ -180,6 +208,19 @@ public class Main extends ApplicationAdapter {
         facingLeft = true;
 
         updatePlayerRectangle();
+        currentLevelPath=path;
+        timer.reset();
+
+    }
+
+    private void saveRecord(){
+        float time =(float) timer.getElapsed();
+        float bestTime=records.getFloat(currentLevelPath,Float.MAX_VALUE);
+        if (time<bestTime){
+            records.putFloat(currentLevelPath,time);
+            records.flush();
+        }
+
     }
 
 }

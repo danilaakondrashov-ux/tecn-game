@@ -17,7 +17,7 @@ public class GameSkin extends Skin  {
 
     public GameSkin (){
         super(new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas")));
-        add("default-font", new BitmapFont(Gdx.files.internal("ui/menu-font.fnt")));
+        add("default-font", new BitmapFont());
         configureLabels();
         configureButtons();
         configureSlider();

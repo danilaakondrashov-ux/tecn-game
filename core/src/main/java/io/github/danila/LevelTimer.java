@@ -30,6 +30,7 @@ public class LevelTimer extends Label {
         setText("Time: " + formatTime(elapsed));
     }
 
+
     public static String formatTime(double seconds) {
         long millis = (long) (seconds * 1000);
         return String.format(Locale.ROOT, "%02d:%02d.%03d", millis / 60000,

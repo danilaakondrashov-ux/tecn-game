@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -18,6 +19,11 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public class Main extends ApplicationAdapter {
+
+    //DEBUG
+
+    private ShapeRenderer hitboxRenderer ;
+    private boolean showHitBox;
     private static final int WIDTH = 38;
     private static final int HEIGHT = 28;
     private AudioManegemante audio ;
@@ -51,6 +57,7 @@ public class Main extends ApplicationAdapter {
     @Override
     public void create() {
         batch = new SpriteBatch();
+        hitboxRenderer = new ShapeRenderer();
         idleTexture = new Texture("assets/hero/Idle.png");
         runTexture = new Texture("assets/hero/Run.png");
         jumpTexture = new Texture("assets/hero/Jump.png");
@@ -89,19 +96,42 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.Q)){
+            showHitBox = !showHitBox;
+        }
         float delta = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0f, 1f / 30f);
         timer.update(Gdx.graphics.getDeltaTime());
         updatePlayer(delta);
-        String nextLevelPath = level.getNextLevel(playerRectangle);
-
-        if (nextLevelPath != null && !nextLevelPath.isEmpty()) {
-            loadLevel(nextLevelPath);
+        if (level.touchedSpikes(playerRectangle)){
+            resetAttempt();
         }
+        else {
+            String nextLevelPath = level.getNextLevel(playerRectangle);
+
+            if (nextLevelPath != null && !nextLevelPath.isEmpty()) {
+                loadLevel(nextLevelPath);
+            }
+        }
+
         playerCamera.follow(x, y, WIDTH, HEIGHT, level.getLevelBounds());
 
         ScreenUtils.clear(0.4f, 0.7f, 0.9f, 1f);
         level.render(playerCamera.getCamera());
         renderPlayer();
+
+        if (showHitBox){
+            hitboxRenderer.setProjectionMatrix(playerCamera.getCamera().combined);
+            hitboxRenderer.begin(ShapeRenderer.ShapeType.Line);
+            hitboxRenderer.setColor(1f,0f,0f,1f);
+            hitboxRenderer.rect(
+                playerRectangle.x,
+                playerRectangle.y,
+                playerRectangle.width,
+                playerRectangle.height
+                );
+            hitboxRenderer.end();
+        }
         stage.act(delta);
         stage.draw();
     }
@@ -153,7 +183,7 @@ public class Main extends ApplicationAdapter {
     }
 
     private void updatePlayerRectangle() {
-        playerRectangle.set(x, y, WIDTH, HEIGHT);
+        playerRectangle.set(x+11f, y, WIDTH-22f, HEIGHT-7f);
     }
 
     private void renderPlayer() {
@@ -177,6 +207,21 @@ public class Main extends ApplicationAdapter {
         batch.end();
     }
 
+
+    private void resetAttempt(){
+        Vector2 spawn=level.getLevelSpawn();
+        x=spawn.x;
+        y=spawn.y;
+        verticalSpeed=0f;
+        animationTime=0f;
+        onGround=false;
+        moving=false;
+        facingLeft=false;
+        updatePlayerRectangle();
+
+
+
+    }
     @Override
     public void dispose() {
         batch.dispose();
@@ -187,6 +232,7 @@ public class Main extends ApplicationAdapter {
         audio.dispose();
         stage.dispose();
         skin.dispose();
+        hitboxRenderer.dispose();
     }
     private void loadLevel(String path) {
         TiledLevel nextLevel = new TiledLevel(path);
@@ -198,16 +244,7 @@ public class Main extends ApplicationAdapter {
 
         level = nextLevel;
 
-        x = spawn.x;
-        y = spawn.y;
-
-        verticalSpeed = 0f;
-        animationTime = 0f;
-        onGround = false;
-        moving = false;
-        facingLeft = true;
-
-        updatePlayerRectangle();
+        resetAttempt();
         currentLevelPath=path;
         timer.reset();
 

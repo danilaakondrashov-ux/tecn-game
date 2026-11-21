@@ -1,5 +1,5 @@
 {
-    "activeFile": "lvl2.tmx",
+    "activeFile": "spike.tsx",
     "expandedProjectPaths": [
         "."
     ],
@@ -24,31 +24,38 @@
             }
         },
         "lvl2.tmx": {
-            "expandedObjectLayers": [
-                4
-            ],
-            "scale": 1.0103645833333332,
-            "selectedLayer": 1,
+            "scale": 1,
+            "selectedLayer": 5,
             "viewCenter": {
-                "x": 480.5196144131142,
-                "y": 542.8733439868035
+                "x": 388,
+                "y": 564.5
             }
+        },
+        "spike.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         }
     },
-    "last.imagePath": "C:/games/java/tecnogame/lwjgl3/src/main/resources/assets/Sprites/14-TileSets",
+    "last.imagePath": "C:/games/java/tecnogame/lwjgl3/src/main/resources/assets",
     "map.lastUsedFormat": "tmx",
     "openFiles": [
         "Terrain (32x32).tsx",
         "Decorations (32x32).tsx",
         "lvl1.tmx",
-        "lvl2.tmx"
+        "lvl2.tmx",
+        "spike.tsx"
     ],
     "project": "game.tiled-project",
     "recentFiles": [
         "Terrain (32x32).tsx",
         "Decorations (32x32).tsx",
         "lvl1.tmx",
-        "lvl2.tmx"
+        "lvl2.tmx",
+        "spike.tsx"
     ],
-    "tileset.lastUsedFormat": "tsx"
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
 }

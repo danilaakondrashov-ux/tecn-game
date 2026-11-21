@@ -17,6 +17,7 @@ public class TiledLevel {
     private final TiledMapTileLayer floor;
     private final TiledMapTileLayer walls;
     private final MapLayer objects;
+    private final MapLayer spikes;
     private final Rectangle bounds;
 
     public TiledLevel(String path) {
@@ -26,7 +27,7 @@ public class TiledLevel {
         floor = (TiledMapTileLayer) map.getLayers().get("floor");
         walls = (TiledMapTileLayer) map.getLayers().get("walls");
         objects = map.getLayers().get("objects");
-
+        spikes = map.getLayers().get("spikes");
         int mapWidth = map.getProperties().get("width", Integer.class);
         int mapHeight = map.getProperties().get("height", Integer.class);
         int tileWidth = map.getProperties().get("tilewidth", Integer.class);
@@ -34,7 +35,19 @@ public class TiledLevel {
 
         bounds = new Rectangle(0, 0, mapWidth * tileWidth, mapHeight * tileHeight);
     }
-
+    public boolean touchedSpikes(Rectangle player){
+        if (spikes==null){
+            return false;
+        }
+        for (MapObject object : spikes.getObjects()){
+            if (object instanceof RectangleMapObject spike){
+                if (player.overlaps(spike.getRectangle())){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     public void render(OrthographicCamera camera) {
         renderer.setView(camera);
         renderer.render();

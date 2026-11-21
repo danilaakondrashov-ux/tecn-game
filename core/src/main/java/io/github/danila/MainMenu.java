@@ -1,5 +1,6 @@
 package io.github.danila;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -29,7 +30,9 @@ public class MainMenu {
     }
     private TextButton button (String text,Runnable action){
         TextButton button = new TextButton(text,skin);
+        button.getLabel().setFontScale(0.75f);
         button.getLabel().setAlignment(Align.center);
+        button.getLabelCell().center().pad(4f, 10f, 4f, 10f);
         button.addListener(event -> {
             if (event instanceof ChangeListener.ChangeEvent){
                 action.run();
@@ -47,9 +50,9 @@ public class MainMenu {
         return path.replace("tiled/lvl", "Уровень ").replace(".tmx", "");
     }
     public void showRecords(){
-        Table table= newPage("Best time");
+        Table table= newPage("Рекорды");
         for (String levelPath:levels){
-            String time="Not completed";
+            String time="Не пройдено";
             if (records.contains(levelPath)){
                 float bestTime=records.getFloat(levelPath);
                 time=LevelTimer.formatTime(bestTime);
@@ -58,9 +61,9 @@ public class MainMenu {
             Label recordLabel=new Label(text,skin);
             table.add(recordLabel).padBottom(18).row();
         }
-        addButton(table,"Exit",returnToMenu);
+        addButton(table,"Назад",returnToMenu);
     }
-    public void showHud(LevelTimer timer, Runnable openSettings) {
+    public void showHud(LevelTimer timer, Runnable openMenu) {
         stage.clear();
         Table hud = new Table();
         hud.setFillParent(true);
@@ -68,13 +71,17 @@ public class MainMenu {
         Table timerPanel = new Table();
         timerPanel.add(timer).pad(10, 14, 10, 14);
         hud.add(timerPanel).expandX().left();
-        hud.add(button("Настройки", openSettings)).width(170).height(48);
+        hud.add(button("Главное меню", openMenu)).width(170).height(48);
         stage.addActor(hud);
     }
+    public void show() {
+        show(null, null, null);
+    }
+
     public void show(String completion, String nextLevelPath, String completedLevelPath) {
         Table table = newPage("Главное меню");
         if (completion == null) {
-            addButton(table, "Начать играть", () -> startLevel.accept(levels[0]));
+            addButton(table, "Играть", () -> startLevel.accept(levels[0]));
         } else {
             table.add(new Label(completion, skin)).padBottom(20).row();
             addButton(table, "Повторить: " + levelName(completedLevelPath),
@@ -83,6 +90,7 @@ public class MainMenu {
                 () -> startLevel.accept(nextLevelPath));
         }
         addButton(table, "Рекорды", this::showRecords);
+        addButton(table, "Выход", () -> Gdx.app.exit());
     }
     private Table newPage(String title) {
         stage.clear();

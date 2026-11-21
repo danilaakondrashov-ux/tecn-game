@@ -14,7 +14,6 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -58,13 +57,12 @@ public class Main extends ApplicationAdapter {
     private void startGame(String levelPath){
         loadLevel(levelPath);
         mainMenu.showHud(timer,this::showMainMenu);
+        playing = true;
     }
 
     private void showMainMenu() {
-        playing=false;
-        mainMenu.show(
-            null,null,null
-        );
+        playing = false;
+        mainMenu.show();
     }
 
     @Override
@@ -82,17 +80,10 @@ public class Main extends ApplicationAdapter {
      timer=new LevelTimer(skin);
      records=Gdx.app.getPreferences("my_game_records");
 
-        Table hud=new Table();
-        hud.setFillParent(true);
-        hud.top().left().pad(20);
-        hud.add(timer);
-        stage.addActor(hud);
-
         playerCamera = new PlayerCamera(400f, 225f);
 
 
         playerRectangle = new Rectangle(x, y, WIDTH, HEIGHT);
-        loadLevel("tiled/lvl1.tmx");
         audio=new AudioManegemante();
         audio.setVolume(0.5f);
         audio.playMusic();
@@ -124,7 +115,7 @@ public class Main extends ApplicationAdapter {
             stage.draw();
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.Q)){
+        if (Gdx.input.isKeyJustPressed(Input.Keys.O) || Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
             showHitBox = !showHitBox;
         }
 
@@ -151,6 +142,7 @@ public class Main extends ApplicationAdapter {
         if (showHitBox){
             hitboxRenderer.setProjectionMatrix(playerCamera.getCamera().combined);
             hitboxRenderer.begin(ShapeRenderer.ShapeType.Line);
+            level.drawHitboxes(hitboxRenderer);
             hitboxRenderer.setColor(1f,0f,0f,1f);
             hitboxRenderer.rect(
                 playerRectangle.x,
@@ -253,7 +245,9 @@ public class Main extends ApplicationAdapter {
     @Override
     public void dispose() {
         batch.dispose();
-        level.dispose();
+        if (level != null) {
+            level.dispose();
+        }
         idleTexture.dispose();
         runTexture.dispose();
         jumpTexture.dispose();

@@ -1,6 +1,8 @@
 package io.github.danila;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
@@ -51,6 +53,43 @@ public class TiledLevel {
     public void render(OrthographicCamera camera) {
         renderer.setView(camera);
         renderer.render();
+    }
+
+    public void drawHitboxes(ShapeRenderer shapes) {
+        shapes.setColor(Color.GREEN);
+        drawTileHitboxes(shapes, floor);
+        drawTileHitboxes(shapes, walls);
+        if (objects != null && objects.getObjects().get("exit") instanceof RectangleMapObject exit) {
+            Rectangle box = exit.getRectangle();
+            shapes.rect(box.x, box.y, box.width, box.height);
+        }
+
+        if (spikes == null) return;
+        shapes.setColor(Color.YELLOW);
+        for (MapObject object : spikes.getObjects()) {
+            if (object instanceof RectangleMapObject spike) {
+                Rectangle box = spike.getRectangle();
+                if (box.width == 0f && box.height == 0f) {
+                    // Показываем точку, если у объекта в Tiled нет размеров.
+                    shapes.line(box.x - 2f, box.y, box.x + 2f, box.y);
+                    shapes.line(box.x, box.y - 2f, box.x, box.y + 2f);
+                } else {
+                    shapes.rect(box.x, box.y, box.width, box.height);
+                }
+            }
+        }
+    }
+
+    private void drawTileHitboxes(ShapeRenderer shapes, TiledMapTileLayer layer) {
+        float tileWidth = layer.getTileWidth();
+        float tileHeight = layer.getTileHeight();
+        for (int x = 0; x < layer.getWidth(); x++) {
+            for (int y = 0; y < layer.getHeight(); y++) {
+                if (layer.getCell(x, y) != null) {
+                    shapes.rect(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
+                }
+            }
+        }
     }
 
     public boolean collides(Rectangle player) {

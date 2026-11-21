@@ -19,6 +19,10 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public class Main extends ApplicationAdapter {
+    private static final String[] LEVELS = {"tiled/lvl1.tmx", "tiled/lvl2.tmx"};
+    private MainMenu mainMenu;
+    private boolean playing;
+
 
     //DEBUG
 
@@ -37,8 +41,6 @@ public class Main extends ApplicationAdapter {
     private TiledLevel level;
     private PlayerCamera playerCamera;
     private Rectangle playerRectangle;
-
-
     private float x;
     private float y;
     private float animationTime;
@@ -53,6 +55,17 @@ public class Main extends ApplicationAdapter {
     private LevelTimer timer ;
     private Preferences records ;
     private String currentLevelPath ;
+    private void startGame(String levelPath){
+        loadLevel(levelPath);
+        mainMenu.showHud(timer,this::showMainMenu);
+    }
+
+    private void showMainMenu() {
+        playing=false;
+        mainMenu.show(
+            null,null,null
+        );
+    }
 
     @Override
     public void create() {
@@ -83,6 +96,12 @@ public class Main extends ApplicationAdapter {
         audio=new AudioManegemante();
         audio.setVolume(0.5f);
         audio.playMusic();
+        Gdx.input.setInputProcessor(stage);
+        mainMenu = new MainMenu(
+            stage, skin, records, LEVELS, this::startGame, this::showMainMenu
+        );
+        showMainMenu();
+
 
     }
 
@@ -97,10 +116,18 @@ public class Main extends ApplicationAdapter {
     @Override
     public void render() {
 
+
+        float delta = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0f, 1f / 30f);
+        if (!playing) {
+            ScreenUtils.clear(0.08f, 0.12f, 0.18f, 1f);
+            stage.act(delta);
+            stage.draw();
+            return;
+        }
         if (Gdx.input.isKeyJustPressed(Input.Keys.Q)){
             showHitBox = !showHitBox;
         }
-        float delta = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0f, 1f / 30f);
+
         timer.update(Gdx.graphics.getDeltaTime());
         updatePlayer(delta);
         if (level.touchedSpikes(playerRectangle)){
@@ -108,8 +135,9 @@ public class Main extends ApplicationAdapter {
         }
         else {
             String nextLevelPath = level.getNextLevel(playerRectangle);
-
             if (nextLevelPath != null && !nextLevelPath.isEmpty()) {
+
+                saveRecord();
                 loadLevel(nextLevelPath);
             }
         }
